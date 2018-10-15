@@ -15,19 +15,23 @@
  */
 package okhttp3.internal.http2;
 
+import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import okhttp3.Headers;
 import okhttp3.internal.Util;
 import okio.ByteString;
 
 /** HTTP header: the name is an ASCII string, but the value can be UTF-8. */
 public final class Header {
   // Special header names defined in HTTP/2 spec.
-  public static final ByteString PSEUDO_PREFIX = ByteString.encodeUtf8(":");
-  public static final ByteString RESPONSE_STATUS = ByteString.encodeUtf8(":status");
-  public static final ByteString TARGET_METHOD = ByteString.encodeUtf8(":method");
-  public static final ByteString TARGET_PATH = ByteString.encodeUtf8(":path");
-  public static final ByteString TARGET_SCHEME = ByteString.encodeUtf8(":scheme");
-  public static final ByteString TARGET_AUTHORITY = ByteString.encodeUtf8(":authority");
+  private static final ByteString PSEUDO_PREFIX = ByteString.encodeUtf8(":");
+  private static final ByteString RESPONSE_STATUS = ByteString.encodeUtf8(":status");
+  private static final ByteString TARGET_METHOD = ByteString.encodeUtf8(":method");
+  private static final ByteString TARGET_PATH = ByteString.encodeUtf8(":path");
+  private static final ByteString TARGET_SCHEME = ByteString.encodeUtf8(":scheme");
+  private static final ByteString TARGET_AUTHORITY = ByteString.encodeUtf8(":authority");
 
   /** Name in case-insensitive ASCII encoding. */
   public final ByteString name;
@@ -70,8 +74,28 @@ public final class Header {
     return Util.format("%s: %s", name.utf8(), value.utf8());
   }
 
-  // TODO(jwilson): move this to Headers?
-  interface Listener {
-    void onHeaders(List<Header> headers);
+  public Headers toHeaders() {
+    return Headers.of(name.utf8(), value.utf8());
+  }
+
+  public static Headers listToHeaders(@Nonnull List<Header> headers) {
+    System.out.println("CONNARD");
+    System.out.println("\t\t" + headers + " becomes :");
+    Headers.Builder builder = new Headers.Builder();
+    for (Header header : headers) {
+      if (header == null) throw new IllegalStateException("WTF");
+      builder.addAll(header.toHeaders());
+    }
+    Headers result = builder.build();
+    System.out.println("\t\t" + result);
+    return result;
+  }
+
+  public static @Nullable List<Headers> listToListOfHeaders(@Nullable List<Header> headers) {
+    if (headers == null) return null;
+
+    List<Headers> result = new ArrayList<>();
+    result.add(listToHeaders(headers));
+    return result;
   }
 }

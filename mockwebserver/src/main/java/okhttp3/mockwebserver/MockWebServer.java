@@ -88,9 +88,9 @@ import static okhttp3.mockwebserver.SocketPolicy.EXPECT_CONTINUE;
 import static okhttp3.mockwebserver.SocketPolicy.FAIL_HANDSHAKE;
 import static okhttp3.mockwebserver.SocketPolicy.NO_RESPONSE;
 import static okhttp3.mockwebserver.SocketPolicy.RESET_STREAM_AT_START;
-import static okhttp3.mockwebserver.SocketPolicy.SHUTDOWN_SERVER_AFTER_RESPONSE;
 import static okhttp3.mockwebserver.SocketPolicy.SHUTDOWN_INPUT_AT_END;
 import static okhttp3.mockwebserver.SocketPolicy.SHUTDOWN_OUTPUT_AT_END;
+import static okhttp3.mockwebserver.SocketPolicy.SHUTDOWN_SERVER_AFTER_RESPONSE;
 import static okhttp3.mockwebserver.SocketPolicy.STALL_SOCKET_AT_START;
 import static okhttp3.mockwebserver.SocketPolicy.UPGRADE_TO_SSL_AT_END;
 
@@ -945,9 +945,9 @@ public final class MockWebServer extends ExternalResource implements Closeable {
       for (int i = 0, size = streamHeaders.size(); i < size; i++) {
         ByteString name = streamHeaders.get(i).name;
         String value = streamHeaders.get(i).value.utf8();
-        if (name.equals(Header.TARGET_METHOD)) {
+        if (name.equals(Headers.TARGET_METHOD)) {
           method = value;
-        } else if (name.equals(Header.TARGET_PATH)) {
+        } else if (name.equals(Headers.TARGET_PATH)) {
           path = value;
         } else if (protocol == Protocol.HTTP_2 || protocol == Protocol.H2_PRIOR_KNOWLEDGE) {
           httpHeaders.add(name.utf8(), value);
@@ -964,7 +964,7 @@ public final class MockWebServer extends ExternalResource implements Closeable {
       MockResponse peek = dispatcher.peek();
       if (!readBody && peek.getSocketPolicy() == EXPECT_CONTINUE) {
         stream.writeHeaders(Collections.singletonList(
-            new Header(Header.RESPONSE_STATUS, ByteString.encodeUtf8("100 Continue"))), true);
+            new Header(Headers.RESPONSE_STATUS, ByteString.encodeUtf8("100 Continue"))), true);
         stream.getConnection().flush();
         readBody = true;
       }
@@ -999,7 +999,7 @@ public final class MockWebServer extends ExternalResource implements Closeable {
         throw new AssertionError("Unexpected status: " + response.getStatus());
       }
       // TODO: constants for well-known header names.
-      http2Headers.add(new Header(Header.RESPONSE_STATUS, statusParts[1]));
+      http2Headers.add(new Header(Headers.RESPONSE_STATUS, statusParts[1]));
       Headers headers = response.getHeaders();
       for (int i = 0, size = headers.size(); i < size; i++) {
         http2Headers.add(new Header(headers.name(i), headers.value(i)));
@@ -1024,9 +1024,9 @@ public final class MockWebServer extends ExternalResource implements Closeable {
     private void pushPromises(Http2Stream stream, List<PushPromise> promises) throws IOException {
       for (PushPromise pushPromise : promises) {
         List<Header> pushedHeaders = new ArrayList<>();
-        pushedHeaders.add(new Header(Header.TARGET_AUTHORITY, url(pushPromise.path()).host()));
-        pushedHeaders.add(new Header(Header.TARGET_METHOD, pushPromise.method()));
-        pushedHeaders.add(new Header(Header.TARGET_PATH, pushPromise.path()));
+        pushedHeaders.add(new Header(Headers.TARGET_AUTHORITY, url(pushPromise.path()).host()));
+        pushedHeaders.add(new Header(Headers.TARGET_METHOD, pushPromise.method()));
+        pushedHeaders.add(new Header(Headers.TARGET_PATH, pushPromise.path()));
         Headers pushPromiseHeaders = pushPromise.headers();
         for (int i = 0, size = pushPromiseHeaders.size(); i < size; i++) {
           pushedHeaders.add(new Header(pushPromiseHeaders.name(i), pushPromiseHeaders.value(i)));

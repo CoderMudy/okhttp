@@ -22,6 +22,7 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
+import okhttp3.Headers;
 import okio.AsyncTimeout;
 import okio.Buffer;
 import okio.BufferedSource;
@@ -56,9 +57,9 @@ public final class Http2Stream {
    * Received headers yet to be {@linkplain #takeHeaders taken}, or {@linkplain FramingSource#read
    * read}.
    */
-  // TODO(jwilson): List<Header> -> Headers?
-  private List<Header> headers;
-  private Header.Listener headersListener;
+  // TODO(oldergod): name sucks, fix it, or fix data structure
+  private List<Headers> headers;
+  private Headers.Listener headersListener;
 
   /** True if response headers have been sent or received. */
   private boolean hasResponseHeaders;
@@ -87,7 +88,7 @@ public final class Http2Stream {
     this.sink = new FramingSink();
     this.source.finished = inFinished;
     this.sink.finished = outFinished;
-    this.headers = headers;
+    this.headers = Header.listToListOfHeaders(headers);
 
     if (isLocallyInitiated() && headers != null) {
       throw new IllegalStateException("locally-initiated streams shouldn't have headers yet");
@@ -147,7 +148,7 @@ public final class Http2Stream {
     } finally {
       readTimeout.exitAndThrowIfTimedOut();
     }
-    List<Header> result = headers;
+    List<Header> result = Headers.toListOfHeader(headers);
     if (result != null) {
       headers = null;
       return result;
@@ -272,20 +273,22 @@ public final class Http2Stream {
    * Accept headers from the network and store them until the client calls {@link #takeHeaders}, or
    * {@link FramingSource#read} them.
    */
-  void receiveHeaders(List<Header> headers) {
+  void receiveHeaders(Headers headers) {
     assert (!Thread.holdsLock(Http2Stream.this));
     boolean open = true;
     synchronized (this) {
       hasResponseHeaders = true;
       if (this.headers == null) {
-        this.headers = headers;
+        this.headers = new ArrayList<>(1);
+        this.headers.add(headers);
         open = isOpen();
         notifyAll();
       } else {
-        List<Header> newHeaders = new ArrayList<>();
-        newHeaders.addAll(this.headers);
-        newHeaders.add(null); // Delimit separate blocks of headers with null.
-        newHeaders.addAll(headers);
+        List<Headers> newHeaders = new ArrayList<>(this.headers);
+        // TODO(benoit) be sure it' good we don't use that anymore
+        // TODO(benoit) let's try to get rid of this and just had headers to be a Headers (no List<Headers)
+        //newHeaders.add(null); // Delimit separate blocks of headers with null.
+        newHeaders.add(headers);
         this.headers = newHeaders;
       }
     }
@@ -319,7 +322,7 @@ public final class Http2Stream {
     }
   }
 
-  public synchronized void setHeadersListener(Header.Listener headersListener) {
+  public synchronized void setHeadersListener(Headers.Listener headersListener) {
     this.headersListener = headersListener;
     if (headers != null && headersListener != null) {
       notifyAll(); // We now have somewhere to deliver headers!
@@ -358,8 +361,8 @@ public final class Http2Stream {
       if (byteCount < 0) throw new IllegalArgumentException("byteCount < 0: " + byteCount);
 
       while (true) {
-        List<Header> headersToDeliver = null;
-        Header.Listener headersListenerToNotify = null;
+        List<Headers> headersToDeliver = null;
+        Headers.Listener headersListenerToNotify = null;
         long readBytesDelivered = -1;
         ErrorCode errorCodeToDeliver = null;
 
@@ -481,8 +484,8 @@ public final class Http2Stream {
 
     @Override public void close() throws IOException {
       long bytesDiscarded;
-      List<Header> headersToDeliver = null;
-      Header.Listener headersListenerToNotify = null;
+      List<Headers> headersToDeliver = null;
+      Headers.Listener headersListenerToNotify = null;
       synchronized (Http2Stream.this) {
         closed = true;
         bytesDiscarded = readBuffer.size();

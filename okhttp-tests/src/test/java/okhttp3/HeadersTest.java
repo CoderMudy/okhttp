@@ -63,7 +63,7 @@ public final class HeadersTest {
         .header("Upgrade", "websocket")
         .header("Host", "square.com")
         .build();
-    List<Header> expected = headerEntries(
+    Headers expected = Headers.of(
         ":method", "GET",
         ":path", "/",
         ":authority", "square.com",

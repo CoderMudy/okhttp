@@ -684,7 +684,7 @@ public final class Http2Connection implements Closeable {
       }
 
       // Update an existing stream.
-      stream.receiveHeaders(headerBlock);
+      stream.receiveHeaders(Header.listToHeaders(headerBlock));
       if (inFinished) stream.receiveFin();
     }
 

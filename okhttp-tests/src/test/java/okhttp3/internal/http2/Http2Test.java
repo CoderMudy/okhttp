@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import okhttp3.Headers;
 import okhttp3.internal.Util;
 import okio.Buffer;
 import okio.BufferedSink;
@@ -146,10 +147,10 @@ public final class Http2Test {
     final int expectedPromisedStreamId = 11;
 
     final List<Header> pushPromise = Arrays.asList(
-        new Header(Header.TARGET_METHOD, "GET"),
-        new Header(Header.TARGET_SCHEME, "https"),
-        new Header(Header.TARGET_AUTHORITY, "squareup.com"),
-        new Header(Header.TARGET_PATH, "/")
+        new Header(Headers.TARGET_METHOD, "GET"),
+        new Header(Headers.TARGET_SCHEME, "https"),
+        new Header(Headers.TARGET_AUTHORITY, "squareup.com"),
+        new Header(Headers.TARGET_PATH, "/")
     );
 
     // Write the push promise frame, specifying the associated stream ID.

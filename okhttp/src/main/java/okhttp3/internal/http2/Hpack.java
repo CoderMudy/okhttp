@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import okhttp3.Headers;
 import okhttp3.internal.Util;
 import okio.Buffer;
 import okio.BufferedSource;
@@ -45,20 +46,20 @@ final class Hpack {
   private static final int PREFIX_7_BITS = 0x7f;
 
   static final Header[] STATIC_HEADER_TABLE = new Header[] {
-      new Header(Header.TARGET_AUTHORITY, ""),
-      new Header(Header.TARGET_METHOD, "GET"),
-      new Header(Header.TARGET_METHOD, "POST"),
-      new Header(Header.TARGET_PATH, "/"),
-      new Header(Header.TARGET_PATH, "/index.html"),
-      new Header(Header.TARGET_SCHEME, "http"),
-      new Header(Header.TARGET_SCHEME, "https"),
-      new Header(Header.RESPONSE_STATUS, "200"),
-      new Header(Header.RESPONSE_STATUS, "204"),
-      new Header(Header.RESPONSE_STATUS, "206"),
-      new Header(Header.RESPONSE_STATUS, "304"),
-      new Header(Header.RESPONSE_STATUS, "400"),
-      new Header(Header.RESPONSE_STATUS, "404"),
-      new Header(Header.RESPONSE_STATUS, "500"),
+      new Header(Headers.TARGET_AUTHORITY, ""),
+      new Header(Headers.TARGET_METHOD, "GET"),
+      new Header(Headers.TARGET_METHOD, "POST"),
+      new Header(Headers.TARGET_PATH, "/"),
+      new Header(Headers.TARGET_PATH, "/index.html"),
+      new Header(Headers.TARGET_SCHEME, "http"),
+      new Header(Headers.TARGET_SCHEME, "https"),
+      new Header(Headers.RESPONSE_STATUS, "200"),
+      new Header(Headers.RESPONSE_STATUS, "204"),
+      new Header(Headers.RESPONSE_STATUS, "206"),
+      new Header(Headers.RESPONSE_STATUS, "304"),
+      new Header(Headers.RESPONSE_STATUS, "400"),
+      new Header(Headers.RESPONSE_STATUS, "404"),
+      new Header(Headers.RESPONSE_STATUS, "500"),
       new Header("accept-charset", ""),
       new Header("accept-encoding", "gzip, deflate"),
       new Header("accept-language", ""),
@@ -513,7 +514,7 @@ final class Hpack {
           writeByteString(name);
           writeByteString(value);
           insertIntoDynamicTable(header);
-        } else if (name.startsWith(Header.PSEUDO_PREFIX) && !Header.TARGET_AUTHORITY.equals(name)) {
+        } else if (name.startsWith(Headers.PSEUDO_PREFIX) && !Headers.TARGET_AUTHORITY.equals(name)) {
           // Follow Chromes lead - only include the :authority pseudo header, but exclude all other
           // pseudo headers. Literal Header Field without Indexing - Indexed Name.
           writeInt(headerNameIndex, PREFIX_4_BITS, 0);

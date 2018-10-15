@@ -30,6 +30,8 @@ import java.util.TreeSet;
 import javax.annotation.Nullable;
 import okhttp3.internal.Util;
 import okhttp3.internal.http.HttpDate;
+import okhttp3.internal.http2.Header;
+import okio.ByteString;
 
 /**
  * The header fields of a single HTTP message. Values are uninterpreted strings; use {@code Request}
@@ -48,6 +50,14 @@ import okhttp3.internal.http.HttpDate;
  * <p>Instances of this class are immutable. Use {@link Builder} to create instances.
  */
 public final class Headers {
+  // Special header names defined in HTTP/2 spec.
+  public static final ByteString PSEUDO_PREFIX = ByteString.encodeUtf8(":");
+  public static final ByteString RESPONSE_STATUS = ByteString.encodeUtf8(":status");
+  public static final ByteString TARGET_METHOD = ByteString.encodeUtf8(":method");
+  public static final ByteString TARGET_PATH = ByteString.encodeUtf8(":path");
+  public static final ByteString TARGET_SCHEME = ByteString.encodeUtf8(":scheme");
+  public static final ByteString TARGET_AUTHORITY = ByteString.encodeUtf8(":authority");
+
   private final String[] namesAndValues;
 
   Headers(Builder builder) {
@@ -273,6 +283,45 @@ public final class Headers {
             "Unexpected char %#04x at %d in %s value: %s", (int) c, i, name, value));
       }
     }
+  }
+
+  public interface Listener {
+    void onHeaders(List<Headers> headers);
+  }
+
+  // TODO(benoit) delete me
+  public List<Header> toListOfHeader() {
+    Map<String, List<String>> map = this.toMultimap();
+
+    System.out.println("CONNARDO");
+    System.out.println("\t\t" + this + " becomes :");
+    List<Header> result = new ArrayList<>();
+
+    for (int i = 0, size = size(); i < size; i++) {
+      result.add(new Header(ByteString.encodeUtf8(name(i)), ByteString.encodeUtf8(value(i))));
+    }
+
+    System.out.println("\t\t" + result);
+    return result;
+  }
+
+  // TODO(benoit) delete me
+  public static @Nullable List<Header> toListOfHeader(@Nullable List<Headers> headers) {
+    if (headers == null) return null;
+
+    List<Header> result = new ArrayList<>();
+    boolean skipFirst = false;
+    for (Headers header : headers) {
+      // TODO(oldergod) let's try to kill that shit
+      if (skipFirst) {
+        result.add(null);
+      } else {
+        skipFirst = true;
+      }
+
+      result.addAll(header.toListOfHeader());
+    }
+    return result;
   }
 
   public static final class Builder {

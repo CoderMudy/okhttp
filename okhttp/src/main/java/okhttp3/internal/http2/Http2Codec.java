@@ -17,7 +17,6 @@ package okhttp3.internal.http2;
 
 import java.io.IOException;
 import java.net.ProtocolException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -43,12 +42,12 @@ import okio.Okio;
 import okio.Sink;
 import okio.Source;
 
+import static okhttp3.Headers.RESPONSE_STATUS;
+import static okhttp3.Headers.TARGET_AUTHORITY;
+import static okhttp3.Headers.TARGET_METHOD;
+import static okhttp3.Headers.TARGET_PATH;
+import static okhttp3.Headers.TARGET_SCHEME;
 import static okhttp3.internal.http.StatusLine.HTTP_CONTINUE;
-import static okhttp3.internal.http2.Header.RESPONSE_STATUS;
-import static okhttp3.internal.http2.Header.TARGET_AUTHORITY;
-import static okhttp3.internal.http2.Header.TARGET_METHOD;
-import static okhttp3.internal.http2.Header.TARGET_PATH;
-import static okhttp3.internal.http2.Header.TARGET_SCHEME;
 
 /** Encode requests and responses using HTTP/2 frames. */
 public final class Http2Codec implements HttpCodec {
@@ -109,8 +108,8 @@ public final class Http2Codec implements HttpCodec {
     if (stream != null) return;
 
     boolean hasRequestBody = request.body() != null;
-    List<Header> requestHeaders = http2HeadersList(request);
-    stream = connection.newStream(requestHeaders, hasRequestBody);
+    Headers requestHeaders = http2HeadersList(request);
+    stream = connection.newStream(requestHeaders.toListOfHeader(), hasRequestBody);
     stream.readTimeout().timeout(chain.readTimeoutMillis(), TimeUnit.MILLISECONDS);
     stream.writeTimeout().timeout(chain.writeTimeoutMillis(), TimeUnit.MILLISECONDS);
   }
@@ -132,25 +131,25 @@ public final class Http2Codec implements HttpCodec {
     return responseBuilder;
   }
 
-  public static List<Header> http2HeadersList(Request request) {
+  public static Headers http2HeadersList(Request request) {
     Headers headers = request.headers();
-    List<Header> result = new ArrayList<>(headers.size() + 4);
-    result.add(new Header(TARGET_METHOD, request.method()));
-    result.add(new Header(TARGET_PATH, RequestLine.requestPath(request.url())));
+    Headers.Builder result = new Headers.Builder();
+    result.add(TARGET_METHOD.utf8(), request.method());
+    result.add(TARGET_PATH.utf8(), RequestLine.requestPath(request.url()));
     String host = request.header("Host");
     if (host != null) {
-      result.add(new Header(TARGET_AUTHORITY, host)); // Optional.
+      result.add(TARGET_AUTHORITY.utf8(), host); // Optional.
     }
-    result.add(new Header(TARGET_SCHEME, request.url().scheme()));
+    result.add(TARGET_SCHEME.utf8(), request.url().scheme());
 
     for (int i = 0, size = headers.size(); i < size; i++) {
       // header names must be lowercase.
       ByteString name = ByteString.encodeUtf8(headers.name(i).toLowerCase(Locale.US));
       if (!HTTP_2_SKIPPED_REQUEST_HEADERS.contains(name)) {
-        result.add(new Header(name, headers.value(i)));
+        result.add(name.utf8(), headers.value(i));
       }
     }
-    return result;
+    return result.build();
   }
 
   /** Returns headers for a name value block containing an HTTP/2 response. */
