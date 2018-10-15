@@ -45,69 +45,69 @@ final class Hpack {
   private static final int PREFIX_6_BITS = 0x3f;
   private static final int PREFIX_7_BITS = 0x7f;
 
-  static final Header[] STATIC_HEADER_TABLE = new Header[] {
-      new Header(Headers.TARGET_AUTHORITY, ""),
-      new Header(Headers.TARGET_METHOD, "GET"),
-      new Header(Headers.TARGET_METHOD, "POST"),
-      new Header(Headers.TARGET_PATH, "/"),
-      new Header(Headers.TARGET_PATH, "/index.html"),
-      new Header(Headers.TARGET_SCHEME, "http"),
-      new Header(Headers.TARGET_SCHEME, "https"),
-      new Header(Headers.RESPONSE_STATUS, "200"),
-      new Header(Headers.RESPONSE_STATUS, "204"),
-      new Header(Headers.RESPONSE_STATUS, "206"),
-      new Header(Headers.RESPONSE_STATUS, "304"),
-      new Header(Headers.RESPONSE_STATUS, "400"),
-      new Header(Headers.RESPONSE_STATUS, "404"),
-      new Header(Headers.RESPONSE_STATUS, "500"),
-      new Header("accept-charset", ""),
-      new Header("accept-encoding", "gzip, deflate"),
-      new Header("accept-language", ""),
-      new Header("accept-ranges", ""),
-      new Header("accept", ""),
-      new Header("access-control-allow-origin", ""),
-      new Header("age", ""),
-      new Header("allow", ""),
-      new Header("authorization", ""),
-      new Header("cache-control", ""),
-      new Header("content-disposition", ""),
-      new Header("content-encoding", ""),
-      new Header("content-language", ""),
-      new Header("content-length", ""),
-      new Header("content-location", ""),
-      new Header("content-range", ""),
-      new Header("content-type", ""),
-      new Header("cookie", ""),
-      new Header("date", ""),
-      new Header("etag", ""),
-      new Header("expect", ""),
-      new Header("expires", ""),
-      new Header("from", ""),
-      new Header("host", ""),
-      new Header("if-match", ""),
-      new Header("if-modified-since", ""),
-      new Header("if-none-match", ""),
-      new Header("if-range", ""),
-      new Header("if-unmodified-since", ""),
-      new Header("last-modified", ""),
-      new Header("link", ""),
-      new Header("location", ""),
-      new Header("max-forwards", ""),
-      new Header("proxy-authenticate", ""),
-      new Header("proxy-authorization", ""),
-      new Header("range", ""),
-      new Header("referer", ""),
-      new Header("refresh", ""),
-      new Header("retry-after", ""),
-      new Header("server", ""),
-      new Header("set-cookie", ""),
-      new Header("strict-transport-security", ""),
-      new Header("transfer-encoding", ""),
-      new Header("user-agent", ""),
-      new Header("vary", ""),
-      new Header("via", ""),
-      new Header("www-authenticate", "")
-  };
+  static final Headers STATIC_HEADER_TABLE = Headers.of(
+      Headers.TARGET_AUTHORITY.utf8(), "",
+      Headers.TARGET_METHOD.utf8(), "GET",
+      Headers.TARGET_METHOD.utf8(), "POST",
+      Headers.TARGET_PATH.utf8(), "/",
+      Headers.TARGET_PATH.utf8(), "/index.html",
+      Headers.TARGET_SCHEME.utf8(), "http",
+      Headers.TARGET_SCHEME.utf8(), "https",
+      Headers.RESPONSE_STATUS.utf8(), "200",
+      Headers.RESPONSE_STATUS.utf8(), "204",
+      Headers.RESPONSE_STATUS.utf8(), "206",
+      Headers.RESPONSE_STATUS.utf8(), "304",
+      Headers.RESPONSE_STATUS.utf8(), "400",
+      Headers.RESPONSE_STATUS.utf8(), "404",
+      Headers.RESPONSE_STATUS.utf8(), "500",
+      "accept-charset", "",
+      "accept-encoding", "gzip, deflate",
+      "accept-language", "",
+      "accept-ranges", "",
+      "accept", "",
+      "access-control-allow-origin", "",
+      "age", "",
+      "allow", "",
+      "authorization", "",
+      "cache-control", "",
+      "content-disposition", "",
+      "content-encoding", "",
+      "content-language", "",
+      "content-length", "",
+      "content-location", "",
+      "content-range", "",
+      "content-type", "",
+      "cookie", "",
+      "date", "",
+      "etag", "",
+      "expect", "",
+      "expires", "",
+      "from", "",
+      "host", "",
+      "if-match", "",
+      "if-modified-since", "",
+      "if-none-match", "",
+      "if-range", "",
+      "if-unmodified-since", "",
+      "last-modified", "",
+      "link", "",
+      "location", "",
+      "max-forwards", "",
+      "proxy-authenticate", "",
+      "proxy-authorization", "",
+      "range", "",
+      "referer", "",
+      "refresh", "",
+      "retry-after", "",
+      "server", "",
+      "set-cookie", "",
+      "strict-transport-security", "",
+      "transfer-encoding", "",
+      "user-agent", "",
+      "vary", "",
+      "via", "",
+      "www-authenticate", ""
+  );
 
   private Hpack() {
   }
@@ -218,10 +218,11 @@ final class Hpack {
 
     private void readIndexedHeader(int index) throws IOException {
       if (isStaticHeader(index)) {
-        Header staticEntry = STATIC_HEADER_TABLE[index];
+        Header staticEntry =
+            new Header(STATIC_HEADER_TABLE.name(index), STATIC_HEADER_TABLE.value(index));
         headerList.add(staticEntry);
       } else {
-        int dynamicTableIndex = dynamicTableIndex(index - STATIC_HEADER_TABLE.length);
+        int dynamicTableIndex = dynamicTableIndex(index - STATIC_HEADER_TABLE.size());
         if (dynamicTableIndex < 0 || dynamicTableIndex >= dynamicTable.length) {
           throw new IOException("Header index too large " + (index + 1));
         }
@@ -261,9 +262,9 @@ final class Hpack {
 
     private ByteString getName(int index) throws IOException {
       if (isStaticHeader(index)) {
-        return STATIC_HEADER_TABLE[index].name;
+        return ByteString.encodeUtf8(STATIC_HEADER_TABLE.name(index));
       } else {
-        int dynamicTableIndex = dynamicTableIndex(index - STATIC_HEADER_TABLE.length);
+        int dynamicTableIndex = dynamicTableIndex(index - STATIC_HEADER_TABLE.size());
         if (dynamicTableIndex < 0 || dynamicTableIndex >= dynamicTable.length) {
           throw new IOException("Header index too large " + (index + 1));
         }
@@ -273,7 +274,7 @@ final class Hpack {
     }
 
     private boolean isStaticHeader(int index) {
-      return index >= 0 && index <= STATIC_HEADER_TABLE.length - 1;
+      return index >= 0 && index <= STATIC_HEADER_TABLE.size() - 1;
     }
 
     /** index == -1 when new. */
@@ -355,10 +356,10 @@ final class Hpack {
   static final Map<ByteString, Integer> NAME_TO_FIRST_INDEX = nameToFirstIndex();
 
   private static Map<ByteString, Integer> nameToFirstIndex() {
-    Map<ByteString, Integer> result = new LinkedHashMap<>(STATIC_HEADER_TABLE.length);
-    for (int i = 0; i < STATIC_HEADER_TABLE.length; i++) {
-      if (!result.containsKey(STATIC_HEADER_TABLE[i].name)) {
-        result.put(STATIC_HEADER_TABLE[i].name, i);
+    Map<ByteString, Integer> result = new LinkedHashMap<>(STATIC_HEADER_TABLE.size());
+    for (int i = 0; i < STATIC_HEADER_TABLE.size(); i++) {
+      if (!result.containsKey(ByteString.encodeUtf8(STATIC_HEADER_TABLE.name(i)))) {
+        result.put(ByteString.encodeUtf8(STATIC_HEADER_TABLE.name(i)), i);
       }
     }
     return Collections.unmodifiableMap(result);
@@ -484,9 +485,9 @@ final class Hpack {
             // it's unnecessary to waste cycles looking at them. This check is built on the
             // observation that the header entries we care about are in adjacent pairs, and we
             // always know the first index of the pair.
-            if (Util.equal(STATIC_HEADER_TABLE[headerNameIndex - 1].value, value)) {
+            if (Util.equal(STATIC_HEADER_TABLE.value(headerNameIndex - 1), value.utf8())) {
               headerIndex = headerNameIndex;
-            } else if (Util.equal(STATIC_HEADER_TABLE[headerNameIndex].value, value)) {
+            } else if (Util.equal(STATIC_HEADER_TABLE.value(headerNameIndex), value.utf8())) {
               headerIndex = headerNameIndex + 1;
             }
           }
@@ -496,10 +497,10 @@ final class Hpack {
           for (int j = nextHeaderIndex + 1, length = dynamicTable.length; j < length; j++) {
             if (Util.equal(dynamicTable[j].name, name)) {
               if (Util.equal(dynamicTable[j].value, value)) {
-                headerIndex = j - nextHeaderIndex + STATIC_HEADER_TABLE.length;
+                headerIndex = j - nextHeaderIndex + STATIC_HEADER_TABLE.size();
                 break;
               } else if (headerNameIndex == -1) {
-                headerNameIndex = j - nextHeaderIndex + STATIC_HEADER_TABLE.length;
+                headerNameIndex = j - nextHeaderIndex + STATIC_HEADER_TABLE.size();
               }
             }
           }
