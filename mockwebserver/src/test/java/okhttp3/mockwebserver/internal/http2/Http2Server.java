@@ -21,9 +21,7 @@ import java.io.IOException;
 import java.net.ProtocolException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLSocket;
@@ -31,7 +29,6 @@ import javax.net.ssl.SSLSocketFactory;
 import okhttp3.Headers;
 import okhttp3.Protocol;
 import okhttp3.internal.Util;
-import okhttp3.internal.http2.Header;
 import okhttp3.internal.http2.Http2Connection;
 import okhttp3.internal.http2.Http2Stream;
 import okhttp3.internal.platform.Platform;
@@ -96,11 +93,11 @@ public final class Http2Server extends Http2Connection.Listener {
 
   @Override public void onStream(Http2Stream stream) throws IOException {
     try {
-      List<Header> requestHeaders = stream.takeHeaders();
+      Headers requestHeaders = Headers.flattenList(stream.takeHeaders());
       String path = null;
       for (int i = 0, size = requestHeaders.size(); i < size; i++) {
-        if (requestHeaders.get(i).name.equals(Headers.TARGET_PATH)) {
-          path = requestHeaders.get(i).value.utf8();
+        if (requestHeaders.name(i).equals(Headers.TARGET_PATH.utf8())) {
+          path = requestHeaders.value(i);
           break;
         }
       }
@@ -125,10 +122,10 @@ public final class Http2Server extends Http2Connection.Listener {
   }
 
   private void send404(Http2Stream stream, String path) throws IOException {
-    List<Header> responseHeaders = Arrays.asList(
-        new Header(":status", "404"),
-        new Header(":version", "HTTP/1.1"),
-        new Header("content-type", "text/plain")
+    Headers responseHeaders = Headers.of(
+        ":status", "404",
+        ":version", "HTTP/1.1",
+        "content-type", "text/plain"
     );
     stream.writeHeaders(responseHeaders, true);
     BufferedSink out = Okio.buffer(stream.getSink());
@@ -137,10 +134,10 @@ public final class Http2Server extends Http2Connection.Listener {
   }
 
   private void serveDirectory(Http2Stream stream, File[] files) throws IOException {
-    List<Header> responseHeaders = Arrays.asList(
-        new Header(":status", "200"),
-        new Header(":version", "HTTP/1.1"),
-        new Header("content-type", "text/html; charset=UTF-8")
+    Headers responseHeaders = Headers.of(
+        ":status", "200",
+        ":version", "HTTP/1.1",
+        "content-type", "text/html; charset=UTF-8"
     );
     stream.writeHeaders(responseHeaders, true);
     BufferedSink out = Okio.buffer(stream.getSink());
@@ -152,10 +149,10 @@ public final class Http2Server extends Http2Connection.Listener {
   }
 
   private void serveFile(Http2Stream stream, File file) throws IOException {
-    List<Header> responseHeaders = Arrays.asList(
-        new Header(":status", "200"),
-        new Header(":version", "HTTP/1.1"),
-        new Header("content-type", contentType(file))
+    Headers responseHeaders = Headers.of(
+        ":status", "200",
+        ":version", "HTTP/1.1",
+        "content-type", contentType(file)
     );
     stream.writeHeaders(responseHeaders, true);
     Source source = Okio.source(file);

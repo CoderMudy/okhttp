@@ -123,7 +123,7 @@ public final class Http2Codec implements HttpCodec {
   }
 
   @Override public Response.Builder readResponseHeaders(boolean expectContinue) throws IOException {
-    List<Header> headers = stream.takeHeaders();
+    List<Header> headers = Headers.toListOfHeader(stream.takeHeaders());
     Response.Builder responseBuilder = readHttp2HeadersList(headers, protocol);
     if (expectContinue && Internal.instance.code(responseBuilder) == HTTP_CONTINUE) {
       return null;

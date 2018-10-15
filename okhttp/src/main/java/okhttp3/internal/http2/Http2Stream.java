@@ -139,7 +139,7 @@ public final class Http2Stream {
    * have been received. If the returned list contains multiple blocks of headers the blocks will be
    * delimited by 'null'.
    */
-  public synchronized List<Header> takeHeaders() throws IOException {
+  public synchronized List<Headers> takeHeaders() throws IOException {
     readTimeout.enter();
     try {
       while (headers == null && errorCode == null) {
@@ -148,7 +148,7 @@ public final class Http2Stream {
     } finally {
       readTimeout.exitAndThrowIfTimedOut();
     }
-    List<Header> result = Headers.toListOfHeader(headers);
+    List<Headers> result = headers;
     if (result != null) {
       headers = null;
       return result;
@@ -170,7 +170,7 @@ public final class Http2Stream {
    * @param out true to create an output stream that we can use to send data to the remote peer.
    * Corresponds to {@code FLAG_FIN}.
    */
-  public void writeHeaders(List<Header> responseHeaders, boolean out) throws IOException {
+  public void writeHeaders(Headers responseHeaders, boolean out) throws IOException {
     assert (!Thread.holdsLock(Http2Stream.this));
     if (responseHeaders == null) {
       throw new NullPointerException("headers == null");
@@ -194,8 +194,8 @@ public final class Http2Stream {
       }
     }
 
-    // TODO(jwilson): rename to writeHeaders
-    connection.writeSynReply(id, outFinished, responseHeaders);
+    // TODO(oldergod): rename to writeHeaders
+    connection.writeSynReply(id, outFinished, responseHeaders.toListOfHeader());
 
     if (flushHeaders) {
       connection.flush();

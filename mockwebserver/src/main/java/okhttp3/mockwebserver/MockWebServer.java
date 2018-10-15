@@ -937,14 +937,14 @@ public final class MockWebServer extends ExternalResource implements Closeable {
     }
 
     private RecordedRequest readRequest(Http2Stream stream) throws IOException {
-      List<Header> streamHeaders = stream.takeHeaders();
+      Headers streamHeaders = Headers.flattenList(stream.takeHeaders());
       Headers.Builder httpHeaders = new Headers.Builder();
       String method = "<:method omitted>";
       String path = "<:path omitted>";
       boolean readBody = true;
       for (int i = 0, size = streamHeaders.size(); i < size; i++) {
-        ByteString name = streamHeaders.get(i).name;
-        String value = streamHeaders.get(i).value.utf8();
+        ByteString name = ByteString.encodeUtf8(streamHeaders.name(i));
+        String value = streamHeaders.value(i);
         if (name.equals(Headers.TARGET_METHOD)) {
           method = value;
         } else if (name.equals(Headers.TARGET_PATH)) {
@@ -963,8 +963,7 @@ public final class MockWebServer extends ExternalResource implements Closeable {
 
       MockResponse peek = dispatcher.peek();
       if (!readBody && peek.getSocketPolicy() == EXPECT_CONTINUE) {
-        stream.writeHeaders(Collections.singletonList(
-            new Header(Headers.RESPONSE_STATUS, ByteString.encodeUtf8("100 Continue"))), true);
+        stream.writeHeaders(Headers.of(Headers.RESPONSE_STATUS.utf8(), "100 Continue"), true);
         stream.getConnection().flush();
         readBody = true;
       }
@@ -1009,7 +1008,7 @@ public final class MockWebServer extends ExternalResource implements Closeable {
 
       Buffer body = response.getBody();
       boolean closeStreamAfterHeaders = body != null || !response.getPushPromises().isEmpty();
-      stream.writeHeaders(http2Headers, closeStreamAfterHeaders);
+      stream.writeHeaders(Header.listToHeaders(http2Headers), closeStreamAfterHeaders);
       pushPromises(stream, response.getPushPromises());
       if (body != null) {
         BufferedSink sink = Okio.buffer(stream.getSink());

@@ -293,15 +293,10 @@ public final class Headers {
   public List<Header> toListOfHeader() {
     Map<String, List<String>> map = this.toMultimap();
 
-    System.out.println("CONNARDO");
-    System.out.println("\t\t" + this + " becomes :");
     List<Header> result = new ArrayList<>();
-
     for (int i = 0, size = size(); i < size; i++) {
       result.add(new Header(ByteString.encodeUtf8(name(i)), ByteString.encodeUtf8(value(i))));
     }
-
-    System.out.println("\t\t" + result);
     return result;
   }
 
@@ -322,6 +317,17 @@ public final class Headers {
       result.addAll(header.toListOfHeader());
     }
     return result;
+  }
+
+  // TODO(benoit) maybe delete me?
+  public static Headers flattenList(List<Headers> headersBlocks) {
+    Builder builder = new Builder();
+    for (Headers headers : headersBlocks) {
+      if (headers == null) throw new IllegalStateException("WTF");
+
+      builder.addAll(headers);
+    }
+    return builder.build();
   }
 
   public static final class Builder {

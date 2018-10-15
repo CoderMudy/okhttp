@@ -25,14 +25,6 @@ import okio.ByteString;
 
 /** HTTP header: the name is an ASCII string, but the value can be UTF-8. */
 public final class Header {
-  // Special header names defined in HTTP/2 spec.
-  private static final ByteString PSEUDO_PREFIX = ByteString.encodeUtf8(":");
-  private static final ByteString RESPONSE_STATUS = ByteString.encodeUtf8(":status");
-  private static final ByteString TARGET_METHOD = ByteString.encodeUtf8(":method");
-  private static final ByteString TARGET_PATH = ByteString.encodeUtf8(":path");
-  private static final ByteString TARGET_SCHEME = ByteString.encodeUtf8(":scheme");
-  private static final ByteString TARGET_AUTHORITY = ByteString.encodeUtf8(":authority");
-
   /** Name in case-insensitive ASCII encoding. */
   public final ByteString name;
   /** Value in UTF-8 encoding. */
@@ -79,16 +71,12 @@ public final class Header {
   }
 
   public static Headers listToHeaders(@Nonnull List<Header> headers) {
-    System.out.println("CONNARD");
-    System.out.println("\t\t" + headers + " becomes :");
     Headers.Builder builder = new Headers.Builder();
     for (Header header : headers) {
       if (header == null) throw new IllegalStateException("WTF");
       builder.addAll(header.toHeaders());
     }
-    Headers result = builder.build();
-    System.out.println("\t\t" + result);
-    return result;
+    return builder.build();
   }
 
   public static @Nullable List<Headers> listToListOfHeaders(@Nullable List<Header> headers) {
