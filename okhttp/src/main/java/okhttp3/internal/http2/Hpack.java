@@ -16,7 +16,6 @@
 package okhttp3.internal.http2;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -112,10 +111,10 @@ final class Hpack {
   private Hpack() {
   }
 
-  // http://tools.ietf.org/html/draft-ietf-httpbis-header-compression-12#section-3.1
+  // https://tools.ietf.org/html/rfc7541#section-3.1
   static final class Reader {
 
-    private final List<Header> headerList = new ArrayList<>();
+    private final Headers.Builder headersBuilder = new Headers.Builder();
     private final BufferedSource source;
 
     private final int headerTableSizeSetting;
@@ -211,22 +210,22 @@ final class Hpack {
     }
 
     public List<Header> getAndResetHeaderList() {
-      List<Header> result = new ArrayList<>(headerList);
-      headerList.clear();
+      List<Header> result = headersBuilder.build().toListOfHeader();
+      headersBuilder.clear();
       return result;
     }
 
     private void readIndexedHeader(int index) throws IOException {
       if (isStaticHeader(index)) {
-        Header staticEntry =
-            new Header(STATIC_HEADER_TABLE.name(index), STATIC_HEADER_TABLE.value(index));
-        headerList.add(staticEntry);
+        headersBuilder.add(STATIC_HEADER_TABLE.name(index), STATIC_HEADER_TABLE.value(index));
       } else {
         int dynamicTableIndex = dynamicTableIndex(index - STATIC_HEADER_TABLE.size());
         if (dynamicTableIndex < 0 || dynamicTableIndex >= dynamicTable.length) {
           throw new IOException("Header index too large " + (index + 1));
         }
-        headerList.add(dynamicTable[dynamicTableIndex]);
+        headersBuilder.add(
+            dynamicTable[dynamicTableIndex].name.utf8(),
+            dynamicTable[dynamicTableIndex].value.utf8());
       }
     }
 
@@ -238,13 +237,13 @@ final class Hpack {
     private void readLiteralHeaderWithoutIndexingIndexedName(int index) throws IOException {
       ByteString name = getName(index);
       ByteString value = readByteString();
-      headerList.add(new Header(name, value));
+      headersBuilder.add(name.utf8(), value.utf8());
     }
 
     private void readLiteralHeaderWithoutIndexingNewName() throws IOException {
       ByteString name = checkLowercase(readByteString());
       ByteString value = readByteString();
-      headerList.add(new Header(name, value));
+      headersBuilder.add(name.utf8(), value.utf8());
     }
 
     private void readLiteralHeaderWithIncrementalIndexingIndexedName(int nameIndex)
@@ -279,7 +278,7 @@ final class Hpack {
 
     /** index == -1 when new. */
     private void insertIntoDynamicTable(int index, Header entry) {
-      headerList.add(entry);
+      headersBuilder.add(entry.name.utf8(), entry.value.utf8());
 
       int delta = entry.hpackSize;
       if (index != -1) { // Index -1 == new header.
@@ -515,7 +514,8 @@ final class Hpack {
           writeByteString(name);
           writeByteString(value);
           insertIntoDynamicTable(header);
-        } else if (name.startsWith(Headers.PSEUDO_PREFIX) && !Headers.TARGET_AUTHORITY.equals(name)) {
+        } else if (name.startsWith(Headers.PSEUDO_PREFIX)
+            && !Headers.TARGET_AUTHORITY.equals(name)) {
           // Follow Chromes lead - only include the :authority pseudo header, but exclude all other
           // pseudo headers. Literal Header Field without Indexing - Indexed Name.
           writeInt(headerNameIndex, PREFIX_4_BITS, 0);

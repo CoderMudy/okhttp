@@ -753,9 +753,9 @@ public final class Http2Test {
   /** Create a sufficiently large header set to overflow INITIAL_MAX_FRAME_SIZE bytes. */
   private static List<Header> largeHeaders() {
     String[] nameValues = new String[32];
-    char[] chars = new char[512];
+    char[] chars = new char[1024];
     for (int i = 0; i < nameValues.length; ) {
-      Arrays.fill(chars, (char) i);
+      Arrays.fill(chars, (char) ('a' + i % 26));
       nameValues[i++] = nameValues[i++] = String.valueOf(chars);
     }
     return headerEntries(nameValues);

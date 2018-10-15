@@ -432,6 +432,11 @@ public final class Headers {
       return null;
     }
 
+    public Builder clear() {
+      namesAndValues.clear();
+      return this;
+    }
+
     public Headers build() {
       return new Headers(this);
     }

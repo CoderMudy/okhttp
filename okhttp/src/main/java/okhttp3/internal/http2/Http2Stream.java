@@ -286,7 +286,8 @@ public final class Http2Stream {
       } else {
         List<Headers> newHeaders = new ArrayList<>(this.headers);
         // TODO(benoit) be sure it' good we don't use that anymore
-        // TODO(benoit) let's try to get rid of this and just had headers to be a Headers (no List<Headers)
+        // TODO(benoit) let's try to get rid of this and
+        // just had headers to be a Headers (no List<Headers)
         //newHeaders.add(null); // Delimit separate blocks of headers with null.
         newHeaders.add(headers);
         this.headers = newHeaders;
